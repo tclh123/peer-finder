@@ -12,30 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-all: push push-mongodb-install
+all: push
 
-TAG = 0.1
-# PREFIX = staging-k8s.gcr.io/peer-finder
-PREFIX = tclh123/peer-finder
+TAG = 0.7
+PREFIX = tclh123/mongodb-install
 
-server: peer-finder.go
-	CGO_ENABLED=0 go build -a -installsuffix cgo --ldflags '-w' ./peer-finder.go
+build:
+	docker build -t $(PREFIX):$(TAG) --build-arg http_proxy=http://douproxy:8118 --build-arg https_proxy=http://douproxy:8118 .
 
-release: server
-	gsutil cp peer-finder gs://kubernetes-release/pets/peer-finder
-
-container: server
-	docker build --pull -t $(PREFIX):$(TAG) .
-
-push: container build-mongodb-install
-	# gcloud docker -- push $(PREFIX):$(TAG)
+push: build
 	docker push $(PREFIX):$(TAG)
 
 clean:
-	rm -f peer-finder
-
-build-mongodb-install: server
-	docker build -t tclh123/mongodb-install:0.7 -f Dockerfile-mongodb-install .
-
-push-mongodb-install: build-mongodb-install
-	docker push tclh123/mongodb-install:0.7
+	docker rmi $(PREFIX):$(TAG)
